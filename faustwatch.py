@@ -56,17 +56,19 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 class DspFileHandler():
-    def __init__(self, dspFile, svg=False, ir=False, af=''):
+    def __init__(self, dspFile, svg=False, ir=False, af='', line=False):
         self.svg = svg
         self.dspFile = dspFile
         self.ir = ir
         self.af =af
+        self.line=line
         self.dspDir = os.path.dirname(os.path.abspath(dspFile))
         print(self.dspDir)
         self.baseName = os.path.basename(dspFile)
         self.projectName = self.baseName[:-4]
         self.outputPath='/tmp/offlineOutput.wav'
         self.inputPath='/tmp/offlineInput.wav'
+        self.sr = 44100
 
     def compute(self):
         if self.svg:
@@ -87,7 +89,10 @@ class DspFileHandler():
             if returnCode <2:
                 self.getIR()
                 self.plotSignal()
-
+        if self.line:
+            self.getLineResponse()
+            self.plotSignal()
+            
             # self.binaryPath = 'offlineProcessor'
             # outfileCpp = 'offline.cpp'
             # cmd = 'faust -a /opt/faudiostream-code/architecture/sndfile.cpp -o '+outfileCpp+' '+self.dspFile            
@@ -180,11 +185,11 @@ class DspFileHandler():
     def getIR(self):
         # tempPath = '/tmp/impulse.wav'
         # self.irPath = '/tmp/ir.wav'
-        sr = 44100
+        # sr = 44100
         lenSec = 0.5
         impOffsetSamps = 5000
         impLength = 10000
-        imp = np.zeros(int(round(lenSec*sr)))
+        imp = np.zeros(int(round(lenSec*self.sr)))
         imp[impOffsetSamps:impOffsetSamps+impLength] = 1
         self.processArray(imp)
         # self.inputSignal = imp
@@ -195,6 +200,11 @@ class DspFileHandler():
         # proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         # resp = proc.communicate()[0]
 
+        return
+
+    def getLineResponse(self):
+        line = np.linspace(-1,1,self.sr)
+        self.processArray(line)
         return
 
     def processFile(self, tempPath):
@@ -232,7 +242,7 @@ class DspFileHandler():
         
 
 global MyDspHandler
-MyDspHandler = DspFileHandler(dspFile,svg=svg, ir=ir, af=af)
+MyDspHandler = DspFileHandler(dspFile,svg=svg, ir=ir, af=af, line=line)
 
 class EventHandler(pyinotify.ProcessEvent):
     def process_IN_CREATE(self, event):
