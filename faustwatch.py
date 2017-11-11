@@ -41,6 +41,8 @@ import os
 import numpy as np
 from scipy.io import wavfile
 import matplotlib
+import config
+
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 plt.ion()
@@ -66,8 +68,8 @@ class DspFileHandler():
         print(self.dspDir)
         self.baseName = os.path.basename(dspFile)
         self.projectName = self.baseName[:-4]
-        self.outputPath='/tmp/offlineOutput.wav'
-        self.inputPath='/tmp/offlineInput.wav'
+        self.outputPath= config.audioOutPath 
+        self.inputPath= config.audioInPath
         self.sr = 44100
 
     def compute(self):
@@ -90,8 +92,10 @@ class DspFileHandler():
                 self.getIR()
                 self.plotSignal()
         if self.line:
-            self.getLineResponse()
-            self.plotSignal()
+            returnCode = self.compile()
+            if returnCode <2:
+                self.getLineResponse()
+                self.plotSignal()
             
             # self.binaryPath = 'offlineProcessor'
             # outfileCpp = 'offline.cpp'
@@ -116,36 +120,42 @@ class DspFileHandler():
             #     self.getIR()
             #     self.plotSignal()
         if len(self.af)>0:
-            self.binaryPath = 'offlineProcessor'
-            outfileCpp = 'offline.cpp'
-            cmd = 'faust -a /opt/faudiostream-code/architecture/sndfile.cpp -o '+outfileCpp+' '+self.dspFile            
-            cmd = shlex.split(cmd)
-            proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            resp = proc.communicate()[0]
-
-            cmd = 'g++ -lsndfile '+outfileCpp+' -o '+self.binaryPath            
-            cmd = shlex.split(cmd)
-            proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            resp = proc.communicate()[0]
-            if 'ERROR' in resp:
-                print bcolors.FAIL+'>[ER]'+bcolors.ENDC+resp
-            elif 'WARNING' in resp:
-                print bcolors.WARNING+'>[WA]'+bcolors.ENDC+resp
-                self.processFile(self.af)
+            returnCode = self.compile()
+            if returnCode<2:
+                self.inputPath = self.af
                 self.sr, self.inputSignal = wavfile.read(self.af)
-                # self.openSVG()
-            else:
-                print bcolors.OKGREEN+'>[OK]'+bcolors.ENDC
-                # self.openSVG()
                 self.processFile(self.af)
-                self.sr, self.inputSignal = wavfile.read(self.af)
                 self.plotSignal()
+            # self.binaryPath = 'offlineProcessor'
+            # outfileCpp = 'offline.cpp'
+            # cmd = 'faust -a /opt/faudiostream-code/architecture/sndfile.cpp -o '+outfileCpp+' '+self.dspFile            
+            # cmd = shlex.split(cmd)
+            # proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            # resp = proc.communicate()[0]
+
+            # cmd = 'g++ -lsndfile '+outfileCpp+' -o '+self.binaryPath            
+            # cmd = shlex.split(cmd)
+            # proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            # resp = proc.communicate()[0]
+            # if 'ERROR' in resp:
+            #     print bcolors.FAIL+'>[ER]'+bcolors.ENDC+resp
+            # elif 'WARNING' in resp:
+            #     print bcolors.WARNING+'>[WA]'+bcolors.ENDC+resp
+            #     self.processFile(self.af)
+            #     self.sr, self.inputSignal = wavfile.read(self.af)
+            #     # self.openSVG()
+            # else:
+            #     print bcolors.OKGREEN+'>[OK]'+bcolors.ENDC
+            #     # self.openSVG()
+            #     self.processFile(self.af)
+            #     self.sr, self.inputSignal = wavfile.read(self.af)
+            #     self.plotSignal()
         return
 
     def compile(self):
         self.binaryPath = 'offlineProcessor'
         outfileCpp = 'offline.cpp'
-        cmd = 'faust -a /opt/faudiostream-code/architecture/sndfile.cpp -o '+outfileCpp+' '+self.dspFile            
+        cmd = 'faust -a '+config.offlineCompArch+' -o '+outfileCpp+' '+self.dspFile            
         cmd = shlex.split(cmd)
         proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         resp = proc.communicate()[0]
