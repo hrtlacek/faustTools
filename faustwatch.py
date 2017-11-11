@@ -1,5 +1,32 @@
 #!/usr/bin/env python
 
+#!/usr/bin/env python
+#title           : faustwatch.py
+#description     : utilities for FAUST development
+#author          : Patrik Lechner <ptrk.lechner@gmail.com>
+#date            : Nov 2017
+#version         : 0.2
+#usage           :
+#notes           :
+#python_version  : 2.7.13
+#=======================================================================
+from __future__ import print_function
+__author__ = "Patrik Lechner <ptrk.lechner@gmail.com>"
+
+import pyinotify
+import subprocess,shlex
+import os
+import numpy as np
+from scipy.io import wavfile
+import matplotlib
+import config
+import scipy.signal as sig
+matplotlib.use("TKAgg")
+import matplotlib.pyplot as plt
+# plt.ion()
+
+
+
 import argparse
 
 parser = argparse.ArgumentParser(description='Watch a dsp file for changes and take a specific action.')
@@ -35,17 +62,6 @@ except:
     af = ''
 line = args.line
 
-import pyinotify
-import subprocess,shlex
-import os
-import numpy as np
-from scipy.io import wavfile
-import matplotlib
-import config
-
-matplotlib.use("TkAgg")
-import matplotlib.pyplot as plt
-plt.ion()
 
 class bcolors:
     HEADER = '\033[95m'
@@ -79,12 +95,12 @@ class DspFileHandler():
             proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             resp = proc.communicate()[0]
             if 'ERROR' in resp:
-                print bcolors.FAIL+'>[ER]'+bcolors.ENDC+resp
+                print (bcolors.FAIL+'>[ER]'+bcolors.ENDC+resp)
             elif 'WARNING' in resp:
-                print bcolors.WARNING+'>[WA]'+bcolors.ENDC+resp
+                print (bcolors.WARNING+'>[WA]'+bcolors.ENDC+resp)
                 self.openSVG()
             else:
-                print bcolors.OKGREEN+'>[OK]'+bcolors.ENDC
+                print (bcolors.OKGREEN+'>[OK]'+bcolors.ENDC)
                 self.openSVG()
         if self.ir:
             returnCode = self.compile()
@@ -96,29 +112,7 @@ class DspFileHandler():
             if returnCode <2:
                 self.getLineResponse()
                 self.plotSignal()
-            
-            # self.binaryPath = 'offlineProcessor'
-            # outfileCpp = 'offline.cpp'
-            # cmd = 'faust -a /opt/faudiostream-code/architecture/sndfile.cpp -o '+outfileCpp+' '+self.dspFile            
-            # cmd = shlex.split(cmd)
-            # proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            # resp = proc.communicate()[0]
 
-            # cmd = 'g++ -lsndfile '+outfileCpp+' -o '+self.binaryPath            
-            # cmd = shlex.split(cmd)
-            # proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            # resp = proc.communicate()[0]
-            # if 'ERROR' in resp:
-            #     print bcolors.FAIL+'>[ER]'+bcolors.ENDC+resp
-            # elif 'WARNING' in resp:
-            #     print bcolors.WARNING+'>[WA]'+bcolors.ENDC+resp
-            #     self.getIR()
-            #     # self.openSVG()
-            # else:
-            #     print bcolors.OKGREEN+'>[OK]'+bcolors.ENDC
-            #     # self.openSVG()
-            #     self.getIR()
-            #     self.plotSignal()
         if len(self.af)>0:
             returnCode = self.compile()
             if returnCode<2:
@@ -126,30 +120,7 @@ class DspFileHandler():
                 self.sr, self.inputSignal = wavfile.read(self.af)
                 self.processFile(self.af)
                 self.plotSignal()
-            # self.binaryPath = 'offlineProcessor'
-            # outfileCpp = 'offline.cpp'
-            # cmd = 'faust -a /opt/faudiostream-code/architecture/sndfile.cpp -o '+outfileCpp+' '+self.dspFile            
-            # cmd = shlex.split(cmd)
-            # proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            # resp = proc.communicate()[0]
 
-            # cmd = 'g++ -lsndfile '+outfileCpp+' -o '+self.binaryPath            
-            # cmd = shlex.split(cmd)
-            # proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            # resp = proc.communicate()[0]
-            # if 'ERROR' in resp:
-            #     print bcolors.FAIL+'>[ER]'+bcolors.ENDC+resp
-            # elif 'WARNING' in resp:
-            #     print bcolors.WARNING+'>[WA]'+bcolors.ENDC+resp
-            #     self.processFile(self.af)
-            #     self.sr, self.inputSignal = wavfile.read(self.af)
-            #     # self.openSVG()
-            # else:
-            #     print bcolors.OKGREEN+'>[OK]'+bcolors.ENDC
-            #     # self.openSVG()
-            #     self.processFile(self.af)
-            #     self.sr, self.inputSignal = wavfile.read(self.af)
-            #     self.plotSignal()
         return
 
     def compile(self):
@@ -159,30 +130,23 @@ class DspFileHandler():
         cmd = shlex.split(cmd)
         proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         resp = proc.communicate()[0]
+        resp = str(resp)
 
         cmd = 'g++ -lsndfile '+outfileCpp+' -o '+self.binaryPath            
         cmd = shlex.split(cmd)
         proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         resp1 = proc.communicate()[0]
-
+        print(type(resp))
         if 'ERROR' in resp:
-            print bcolors.FAIL+'>[ER]'+bcolors.ENDC+resp
+            print (bcolors.FAIL+'>[ER]'+bcolors.ENDC+resp)
             return 2
         elif 'WARNING' in resp:
-            print bcolors.WARNING+'>[WA]'+bcolors.ENDC+resp
+            print (bcolors.WARNING+'>[WA]'+bcolors.ENDC+resp)
             return 1
-            # self.processFile(self.af)
-            # self.sr, self.inputSignal = wavfile.read(self.af)
-            # self.openSVG()
-        else:
-            print bcolors.OKGREEN+'>[OK]'+bcolors.ENDC
-            # self.openSVG()
-            return 0
-            # self.processFile(self.af)
-            # self.sr, self.inputSignal = wavfile.read(self.af)
-            # self.plotSignal()
 
-        # return
+        else:
+            print (bcolors.OKGREEN+'>[OK]'+bcolors.ENDC)
+            return 0
 
     def openSVG(self):
         
@@ -193,22 +157,12 @@ class DspFileHandler():
         # resp = proc.communicate()
 
     def getIR(self):
-        # tempPath = '/tmp/impulse.wav'
-        # self.irPath = '/tmp/ir.wav'
-        # sr = 44100
         lenSec = 0.5
         impOffsetSamps = 5000
         impLength = 10000
         imp = np.zeros(int(round(lenSec*self.sr)))
         imp[impOffsetSamps:impOffsetSamps+impLength] = 1
         self.processArray(imp)
-        # self.inputSignal = imp
-        # wavfile.write(tempPath, sr, imp)
-
-        # cmd = os.path.join(self.dspDir,self.binaryPath)+' '+tempPath+' '+self.irPath            
-        # cmd = shlex.split(cmd)
-        # proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        # resp = proc.communicate()[0]
 
         return
 
@@ -218,8 +172,6 @@ class DspFileHandler():
         return
 
     def processFile(self, tempPath):
-        # tempPath = '/tmp/impulse.wav'
-        # self.irPath = '/tmp/ir.wav'
 
         cmd = os.path.join(self.dspDir,self.binaryPath)+' '+tempPath+' '+self.outputPath            
         cmd = shlex.split(cmd)
@@ -240,29 +192,47 @@ class DspFileHandler():
         return
 
     def plotSignal(self):
-        fig = plt.gcf()
-        plt.clf()
         sr,y = wavfile.read(self.outputPath)
         n = range(len(y))
         x = self.inputSignal
-        plt.plot(n,y,n,x)
-        plt.grid()
-        plt.show()
-        plt.pause(0.0001)
         
+        fig = plt.gcf()
+        plt.clf()
+        
+        plt.subplot(3,1,1)
+        plt.plot(n,x, color='black')
+        plt.plot(n,y, color='red', alpha=0.7)
+        plt.grid()
+        plt.legend(['input', 'output'])
+
+        plt.subplot(3,1,2)
+        Pxx, freqs, bins, im = plt.specgram(y, NFFT=1024, Fs=self.sr,noverlap=100, cmap=plt.cm.gist_heat)
+
+        plt.subplot(3,1,3)
+        f, Pxx_den = sig.welch(y, self.sr, nperseg=1024)
+        plt.semilogx(f,Pxx_den)
+
+
+
+        plt.show()
+        plt.pause(0.05)
+
+
+    def getSpec(self):
+        x = self.inputSignal
+        f, Pxx_den = sig.welch(x, self.sr, nperseg=1024)
 
 global MyDspHandler
 MyDspHandler = DspFileHandler(dspFile,svg=svg, ir=ir, af=af, line=line)
 
 class EventHandler(pyinotify.ProcessEvent):
     def process_IN_CREATE(self, event):
-        print "Creating:", event.pathname
+        print ("Creating:", event.pathname)
 
     def process_IN_DELETE(self, event):
-        print "Removing:", event.pathname
+        print ("Removing:", event.pathname)
 
     def process_IN_CLOSE_WRITE(self,event):
-        # print 'modified.'
         MyDspHandler.compute()
 
 
@@ -276,4 +246,5 @@ notifier = pyinotify.Notifier(wm,handler)
 wm.add_watch(dspFile, pyinotify.ALL_EVENTS)
 # Loop forever and handle events.
 notifier.loop()
+
 
