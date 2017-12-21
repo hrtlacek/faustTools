@@ -2,7 +2,8 @@
 At the moment there is one tool present, faustwatch.py
 
 ## usage
-``` usage: faustwatch.py [-h] [--svg] [--ir] [--af AF] [--impLen IMPLEN] [--line]
+``
+usage: faustwatch.py [-h] [--svg] [--ir] [--af AF] [--impLen IMPLEN] [--line]
                      N
 
 Watch a dsp file for changes and take a specific action.
@@ -18,4 +19,4 @@ optional arguments:
   --impLen IMPLEN  Length of impulse. Default is unit impulse, so 1.
   --line           Get response to line from -1 to 1. So input-output
                    amplitude relationship.
-```
+``
