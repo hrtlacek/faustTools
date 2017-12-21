@@ -1,0 +1,4 @@
+matplotlib==2.0.2
+scipy==0.19.1
+numpy==1.12.1
+pyinotify==0.9.6
