@@ -2,7 +2,7 @@
 At the moment there is one tool present, faustwatch.py
 
 ## usage
-```usage: faustwatch.py [-h] [--svg] [--ir] [--af AF] [--impLen IMPLEN] [--line]
+``` usage: faustwatch.py [-h] [--svg] [--ir] [--af AF] [--impLen IMPLEN] [--line]
                      N
 
 Watch a dsp file for changes and take a specific action.
