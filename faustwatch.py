@@ -41,6 +41,8 @@ parser.add_argument('--ir', dest='ir', action='store_const',
                     help='Get impulse response and plot it.')
 parser.add_argument('--af', dest='af', type=str,nargs=1, default='', help='Send through audio file.')
 
+parser.add_argument('--impLen', type=int, default = 1, help='Length of impulse. Default is unit impulse, so 1.')
+
 parser.add_argument('--line', dest='line', action='store_const',
                     const=True, default=False,
                     help='Get response to line from -1 to 1. So input-output amplitude relationship.')
@@ -56,6 +58,7 @@ args = parser.parse_args()
 dspFile = args.dspFile
 svg = args.svg
 ir = args.ir
+impLen = args.impLen
 try:
     af = args.af[0]
 except:
@@ -74,12 +77,14 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 class DspFileHandler():
-    def __init__(self, dspFile, svg=False, ir=False, af='', line=False):
+    def __init__(self, dspFile, svg=False, ir=False, af='', line=False, impLen=1):
         self.svg = svg
         self.dspFile = dspFile
         self.ir = ir
         self.af =af
         self.line=line
+        self.impLen = impLen
+
         self.dspDir = os.path.dirname(os.path.abspath(dspFile))
         print(self.dspDir)
         self.baseName = os.path.basename(dspFile)
@@ -100,6 +105,7 @@ class DspFileHandler():
                 print (bcolors.WARNING+'>[WA]'+bcolors.ENDC+resp)
                 self.openSVG()
             else:
+                print(resp)
                 print (bcolors.OKGREEN+'>[OK]'+bcolors.ENDC)
                 self.openSVG()
         if self.ir:
@@ -159,7 +165,7 @@ class DspFileHandler():
     def getIR(self):
         lenSec = 0.5
         impOffsetSamps = 5000
-        impLength = 10000
+        impLength = self.impLen
         imp = np.zeros(int(round(lenSec*self.sr)))
         imp[impOffsetSamps:impOffsetSamps+impLength] = 1
         self.processArray(imp)
@@ -223,7 +229,7 @@ class DspFileHandler():
         f, Pxx_den = sig.welch(x, self.sr, nperseg=1024)
 
 global MyDspHandler
-MyDspHandler = DspFileHandler(dspFile,svg=svg, ir=ir, af=af, line=line)
+MyDspHandler = DspFileHandler(dspFile,svg=svg, ir=ir, af=af, line=line, impLen=impLen)
 
 class EventHandler(pyinotify.ProcessEvent):
     def process_IN_CREATE(self, event):
