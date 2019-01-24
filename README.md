@@ -3,8 +3,7 @@ At the moment there is one tool present, faustwatch.py
 
 ## usage
 ``` bash
-usage: faustwatch.py [-h] [--svg] [--ir] [--af AF] [--impLen IMPLEN] [--line]
-                     N
+usage: faustwatch [-h] [--svg] [--ir] [--af AF] [--impLen IMPLEN] [--line] N
 
 Watch a dsp file for changes and take a specific action.
 
@@ -18,5 +17,7 @@ optional arguments:
   --af AF          Send through audio file.
   --impLen IMPLEN  Length of impulse. Default is unit impulse, so 1.
   --line           Get response to line from -1 to 1. So input-output
-                   amplitude relationship.
+                   amplitude relationship. Useful for plotting transfer
+                   functions of non-linearities
+
 ```

@@ -4,11 +4,11 @@
 #title           : faustwatch.py
 #description     : utilities for FAUST development
 #author          : Patrik Lechner <ptrk.lechner@gmail.com>
-#date            : Nov 2017
-#version         : 0.2
+#date            : Jan 2018
+#version         : 1.0
 #usage           :
 #notes           :
-#python_version  : 2.7.13
+#python_version  : 3.6.3
 #=======================================================================
 from __future__ import print_function
 __author__ = "Patrik Lechner <ptrk.lechner@gmail.com>"
@@ -21,10 +21,10 @@ from scipy.io import wavfile
 import matplotlib
 import config
 import scipy.signal as sig
-matplotlib.use("TKAgg")
-import matplotlib.pyplot as plt
-# plt.ion()
-
+# matplotlib.use("TKAgg")
+# import matplotlib.pyplot as plt
+import plotlib as pl
+import logging
 
 
 import argparse
@@ -45,7 +45,7 @@ parser.add_argument('--impLen', type=int, default = 1, help='Length of impulse. 
 
 parser.add_argument('--line', dest='line', action='store_const',
                     const=True, default=False,
-                    help='Get response to line from -1 to 1. So input-output amplitude relationship.')
+                    help='Get response to line from -1 to 1. So input-output amplitude relationship. Useful for plotting transfer functions of non-linearities')
 
 
 
@@ -66,6 +66,7 @@ except:
 line = args.line
 
 
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -77,7 +78,7 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 class DspFileHandler():
-    def __init__(self, dspFile, svg=False, ir=False, af='', line=False, impLen=1):
+    def __init__(self, dspFile, svg=False, ir=False, af='', line=False, impLen=1, plotter=None):
         self.svg = svg
         self.dspFile = dspFile
         self.ir = ir
@@ -86,12 +87,14 @@ class DspFileHandler():
         self.impLen = impLen
 
         self.dspDir = os.path.dirname(os.path.abspath(dspFile))
-        print(self.dspDir)
         self.baseName = os.path.basename(dspFile)
         self.projectName = self.baseName[:-4]
         self.outputPath= config.audioOutPath 
         self.inputPath= config.audioInPath
         self.sr = 44100
+        self.plotter = plotter
+
+        logging.info('watching file: '+os.path.abspath(dspFile))
 
     def compute(self):
         if self.svg:
@@ -112,12 +115,12 @@ class DspFileHandler():
             returnCode = self.compile()
             if returnCode <2:
                 self.getIR()
-                self.plotSignal()
+                self.plotSignalQt()
         if self.line:
             returnCode = self.compile()
             if returnCode <2:
                 self.getLineResponse()
-                self.plotSignal()
+                self.plotSignalQt()
 
         if len(self.af)>0:
             returnCode = self.compile()
@@ -125,7 +128,7 @@ class DspFileHandler():
                 self.inputPath = self.af
                 self.sr, self.inputSignal = wavfile.read(self.af)
                 self.processFile(self.af)
-                self.plotSignal()
+                self.plotSignalQt()
 
         return
 
@@ -187,7 +190,8 @@ class DspFileHandler():
         return
     
     def processArray(self,anArray, sr=44100,inputPath='/tmp/offlineInput.wav'):
-        self.inputSignal = anArray
+        assert type(anArray) ==np.ndarray
+        self.inputSignal = anArray.astype(np.float32)
         wavfile.write(inputPath, sr, anArray)
         self.inputPath = inputPath
         
@@ -195,6 +199,11 @@ class DspFileHandler():
         cmd = shlex.split(cmd)
         proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         resp = proc.communicate()[0]
+        return
+
+    def plotSignalQt(self):
+        sr, y = wavfile.read(self.outputPath)
+        self.plotter.plot(y)
         return
 
     def plotSignal(self):
@@ -229,7 +238,13 @@ class DspFileHandler():
         f, Pxx_den = sig.welch(x, self.sr, nperseg=1024)
 
 global MyDspHandler
-MyDspHandler = DspFileHandler(dspFile,svg=svg, ir=ir, af=af, line=line, impLen=impLen)
+
+if ir:
+    plotter = pl.Plotter()
+    MyDspHandler = DspFileHandler(
+        dspFile, svg=svg, ir=ir, af=af, line=line, impLen=impLen, plotter=plotter)
+else:
+    MyDspHandler = DspFileHandler(dspFile,svg=svg, ir=ir, af=af, line=line, impLen=impLen, plotter = None)
 
 class EventHandler(pyinotify.ProcessEvent):
     def process_IN_CREATE(self, event):
