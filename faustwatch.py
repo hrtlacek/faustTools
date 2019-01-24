@@ -102,6 +102,7 @@ class DspFileHandler():
             cmd = shlex.split(cmd)
             proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             resp = proc.communicate()[0]
+            resp = resp.decode("utf-8")
             if 'ERROR' in resp:
                 print (bcolors.FAIL+'>[ER]'+bcolors.ENDC+resp)
             elif 'WARNING' in resp:
