@@ -21,11 +21,9 @@ from scipy.io import wavfile
 import matplotlib
 import config
 import scipy.signal as sig
-# matplotlib.use("TKAgg")
-# import matplotlib.pyplot as plt
+
 import plotlib as pl
 import logging
-
 
 import argparse
 
@@ -41,7 +39,10 @@ parser.add_argument('--ir', dest='ir', action='store_const',
                     help='Get impulse response and plot it.')
 parser.add_argument('--af', dest='af', type=str,nargs=1, default='', help='Send through audio file.')
 
-parser.add_argument('--impLen', type=int, default = 1, help='Length of impulse. Default is unit impulse, so 1.')
+parser.add_argument('--impLen', type=int, default = 1, help='Length of impulse in samples. Default is unit impulse, so 1.')
+
+parser.add_argument('--length', type=float, default=1,
+                    help='File Length in seconds. Default 0.5')
 
 parser.add_argument('--line', dest='line', action='store_const',
                     const=True, default=False,
@@ -53,17 +54,23 @@ parser.add_argument('--line', dest='line', action='store_const',
 #                     const=True, default=False,
 #                     help='Plot output of faust program.')
 
+logging.basicConfig(level=logging.DEBUG)
 
 args = parser.parse_args()
 dspFile = args.dspFile
 svg = args.svg
 ir = args.ir
 impLen = args.impLen
+lenSec = float(args.length)
+
+logging.debug(lenSec)
+
 try:
     af = args.af[0]
 except:
     af = ''
 line = args.line
+
 
 
 
@@ -78,20 +85,27 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 class DspFileHandler():
-    def __init__(self, dspFile, svg=False, ir=False, af='', line=False, impLen=1, plotter=None):
+    def __init__(self, dspFile, svg=False, ir=False, af='', line=False, impLen=1, lenSec = 0.5, plotter=None):
         self.svg = svg
         self.dspFile = dspFile
         self.ir = ir
         self.af =af
         self.line=line
+        self.lenSec = lenSec
         self.impLen = impLen
+        self.sr = 44100.
+        self.lenSamps = int(round(self.lenSec*self.sr))
+        logging.debug(self.lenSamps)
+
+        self.lastIR = np.zeros(self.lenSamps)
+        self.lastSpec = None
+        self.lastLine = None
 
         self.dspDir = os.path.dirname(os.path.abspath(dspFile))
         self.baseName = os.path.basename(dspFile)
         self.projectName = self.baseName[:-4]
         self.outputPath= config.audioOutPath 
         self.inputPath= config.audioInPath
-        self.sr = 44100
         self.plotter = plotter
 
         logging.info('watching file: '+os.path.abspath(dspFile))
@@ -167,10 +181,9 @@ class DspFileHandler():
         # resp = proc.communicate()
 
     def getIR(self):
-        lenSec = 0.5
-        impOffsetSamps = 5000
+        impOffsetSamps = int(round(self.lenSamps*0.25))
         impLength = self.impLen
-        imp = np.zeros(int(round(lenSec*self.sr)))
+        imp = np.zeros(self.lenSamps)
         imp[impOffsetSamps:impOffsetSamps+impLength] = 1
         self.processArray(imp)
 
@@ -204,34 +217,44 @@ class DspFileHandler():
 
     def plotSignalQt(self):
         sr, y = wavfile.read(self.outputPath)
-        self.plotter.plot(y)
+        currentAndLast = np.array([self.lastIR,y]).T
+
+        self.plotter.plot(currentAndLast)
+        self.lastIR = y
+
+        # f, Pxx_den = sig.welch(y, self.sr, nperseg=1024)
+
+        # Pxx, freqs, bins, im = plt.specgram(
+        #     y, NFFT=1024, Fs=self.sr, noverlap=100, cmap=plt.cm.gist_heat)
+
+
         return
 
-    def plotSignal(self):
-        sr,y = wavfile.read(self.outputPath)
-        n = range(len(y))
-        x = self.inputSignal
+    # def plotSignal(self):
+    #     sr,y = wavfile.read(self.outputPath)
+    #     n = range(len(y))
+    #     x = self.inputSignal
         
-        fig = plt.gcf()
-        plt.clf()
+    #     fig = plt.gcf()
+    #     plt.clf()
         
-        plt.subplot(3,1,1)
-        plt.plot(n,x, color='black')
-        plt.plot(n,y, color='red', alpha=0.7)
-        plt.grid()
-        plt.legend(['input', 'output'])
+    #     plt.subplot(3,1,1)
+    #     plt.plot(n,x, color='black')
+    #     plt.plot(n,y, color='red', alpha=0.7)
+    #     plt.grid()
+    #     plt.legend(['input', 'output'])
 
-        plt.subplot(3,1,2)
-        Pxx, freqs, bins, im = plt.specgram(y, NFFT=1024, Fs=self.sr,noverlap=100, cmap=plt.cm.gist_heat)
+    #     plt.subplot(3,1,2)
+    #     Pxx, freqs, bins, im = plt.specgram(y, NFFT=1024, Fs=self.sr,noverlap=100, cmap=plt.cm.gist_heat)
 
-        plt.subplot(3,1,3)
-        f, Pxx_den = sig.welch(y, self.sr, nperseg=1024)
-        plt.semilogx(f,Pxx_den)
+    #     plt.subplot(3,1,3)
+    #     f, Pxx_den = sig.welch(y, self.sr, nperseg=1024)
+    #     plt.semilogx(f,Pxx_den)
 
 
 
-        plt.show()
-        plt.pause(0.05)
+    #     plt.show()
+    #     plt.pause(0.05)
 
 
     def getSpec(self):
@@ -243,9 +266,10 @@ global MyDspHandler
 if ir:
     plotter = pl.Plotter()
     MyDspHandler = DspFileHandler(
-        dspFile, svg=svg, ir=ir, af=af, line=line, impLen=impLen, plotter=plotter)
+        dspFile, svg=svg, ir=ir, af=af, line=line, impLen=impLen, plotter=plotter, lenSec=lenSec)
 else:
-    MyDspHandler = DspFileHandler(dspFile,svg=svg, ir=ir, af=af, line=line, impLen=impLen, plotter = None)
+    MyDspHandler = DspFileHandler(
+        dspFile, svg=svg, ir=ir, af=af, line=line, impLen=impLen, plotter=None, lenSec=lenSec)
 
 class EventHandler(pyinotify.ProcessEvent):
     def process_IN_CREATE(self, event):
