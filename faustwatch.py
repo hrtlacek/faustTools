@@ -5,7 +5,7 @@
 #description     : utilities for FAUST development
 #author          : Patrik Lechner <ptrk.lechner@gmail.com>
 #date            : Jan 2018
-#version         : 1.1.1
+#version         : 1.2.0
 #usage           :
 #notes           :
 #python_version  : 3.6.3
@@ -42,16 +42,19 @@ parser.add_argument('--svg', dest='svg', action='store_const',
 parser.add_argument('--ir', dest='ir', action='store_const',
                     const=True, default=False,
                     help='Get impulse response and plot it.')
-parser.add_argument('--af', dest='af', type=str,nargs=1, default='', help='Send through audio file.')
+
+# Hotfix: disableBroken: audio file input feature
+# parser.add_argument('--af', dest='af', type=str,nargs=1, default='', help='Send through audio file.')
 
 parser.add_argument('--impLen', type=int, default = 1, help='Length of impulse in samples. Default is unit impulse, so 1.')
 
 parser.add_argument('--length', type=float, default=1,
                     help='File Length in seconds. Default 0.5')
 
-parser.add_argument('--line', dest='line', action='store_const',
-                    const=True, default=False,
-                    help='Get response to line from -1 to 1. So input-output amplitude relationship. Useful for plotting transfer functions of non-linearities')
+# Hotfix: disableBroken: line feature
+# parser.add_argument('--line', dest='line', action='store_const',
+#                     const=True, default=False,
+#                     help='Get response to line from -1 to 1. So input-output amplitude relationship. Useful for plotting transfer functions of non-linearities')
 
 
 args = parser.parse_args()
@@ -63,11 +66,14 @@ lenSec = float(args.length)
 
 logging.debug(lenSec)
 
+# Hotfix: disableBroken: line feature
+# line = args.line
+line = False
+
 try:
     af = args.af[0]
 except:
     af = ''
-line = args.line
 
 class bcolors:
     HEADER = '\033[95m'
@@ -122,6 +128,23 @@ class DspFileHandler():
         self.sfplayer = SfPlayer(self.outputPath, loop=False, mul=1).out()        
 
     def compute(self):
+        if not self.svg and not self.ir and not self.af and not self.line:
+            logging.info('only compiling, no other action.')
+
+            cmd = 'faust '+self.dspFile
+            cmd = shlex.split(cmd)
+            proc = subprocess.Popen(
+                cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            resp = proc.communicate()[0]
+            resp = resp.decode("utf-8")
+            if 'ERROR' in resp:
+                print(bcolors.FAIL+'>[ER]'+bcolors.ENDC+resp)
+            elif 'WARNING' in resp:
+                print(bcolors.WARNING+'>[WA]'+bcolors.ENDC+resp)
+            else:
+                print(resp)
+                print(bcolors.OKGREEN+'>[OK]'+bcolors.ENDC)
+
         if self.svg:
             cmd = 'faust --svg '+self.dspFile
             cmd = shlex.split(cmd)
