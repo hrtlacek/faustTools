@@ -5,7 +5,7 @@
 #description     : utilities for FAUST development
 #author          : Patrik Lechner <ptrk.lechner@gmail.com>
 #date            : Jan 2018
-#version         : 1.0
+#version         : 1.1
 #usage           :
 #notes           :
 #python_version  : 3.6.3
@@ -26,6 +26,12 @@ import plotlib as pl
 import logging
 
 import argparse
+
+from pyo import Server, Sig, SndTable, Trig, Phasor, OscTrig, SfPlayer
+
+logging.captureWarnings(True)
+logging.basicConfig(level=logging.CRITICAL)
+# logging.Logger.disabled = True
 
 parser = argparse.ArgumentParser(description='Watch a dsp file for changes and take a specific action.')
 parser.add_argument('dspFile', metavar='N', type=str, 
@@ -54,7 +60,6 @@ parser.add_argument('--line', dest='line', action='store_const',
 #                     const=True, default=False,
 #                     help='Plot output of faust program.')
 
-logging.basicConfig(level=logging.DEBUG)
 
 args = parser.parse_args()
 dspFile = args.dspFile
@@ -95,6 +100,9 @@ class DspFileHandler():
         self.impLen = impLen
         self.sr = 44100.
         self.lenSamps = int(round(self.lenSec*self.sr))
+        self.audioInitialized = False
+        self.irAvailable = False
+
         logging.debug(self.lenSamps)
 
         self.lastIR = np.zeros(self.lenSamps)
@@ -109,6 +117,28 @@ class DspFileHandler():
         self.plotter = plotter
 
         logging.info('watching file: '+os.path.abspath(dspFile))
+
+        # self.initializeAudio()
+
+    def initializeAudio(self):
+        self.audioServer = Server(audio='jack')
+        self.audioServer.boot()
+        self.audioServer.start()
+        self.reloadAudioFile()
+        self.audioInitialized = True
+
+
+    def reloadAudioFile(self):
+        self.sfplayer = SfPlayer(self.outputPath, loop=False, mul=1).out()
+        # self.snd = SndTable(self.outputPath)
+        # mainPlayerAmp = Sig(1)
+        # self.trig = Trig()
+        # pp = Sig(0)
+        # phase = Phasor(freq=self.snd.getRate(), phase=pp)
+
+        # self.mainPlayer = OscTrig(self.snd, self.trig, freq=self.snd.getRate(),
+        #                       mul=mainPlayerAmp, interp=0).out()
+        
 
     def compute(self):
         if self.svg:
@@ -131,6 +161,8 @@ class DspFileHandler():
             if returnCode <2:
                 self.getIR()
                 self.plotSignalQt()
+                # self.play()
+          
         if self.line:
             returnCode = self.compile()
             if returnCode <2:
@@ -160,7 +192,6 @@ class DspFileHandler():
         cmd = shlex.split(cmd)
         proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         resp1 = proc.communicate()[0]
-        print(type(resp))
         if 'ERROR' in resp:
             print (bcolors.FAIL+'>[ER]'+bcolors.ENDC+resp)
             return 2
@@ -200,7 +231,10 @@ class DspFileHandler():
         cmd = shlex.split(cmd)
         proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         resp = proc.communicate()[0]
-
+        self.irAvailable = True
+        if not self.audioInitialized:
+            self.initializeAudio()
+        self.play()
         return
     
     def processArray(self,anArray, sr=44100,inputPath='/tmp/offlineInput.wav'):
@@ -213,7 +247,19 @@ class DspFileHandler():
         cmd = shlex.split(cmd)
         proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         resp = proc.communicate()[0]
+
+        if not self.audioInitialized:
+            self.initializeAudio()
+        self.play()
+
         return
+
+    def play(self):
+        logging.debug('play function called')
+        self.reloadAudioFile()
+        # self.trig.play()
+        
+
 
     def plotSignalQt(self):
         sr, y = wavfile.read(self.outputPath)

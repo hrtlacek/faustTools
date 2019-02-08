@@ -11,7 +11,11 @@ import sys
 import scipy.signal as sig
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
+
+
+logging.captureWarnings(True)
+
+logging.basicConfig(level=logging.CRITICAL)
 logging.debug('Logger process started.')
 
 global plots

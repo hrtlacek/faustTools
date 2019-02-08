@@ -10,7 +10,7 @@ import pickle
 import numpy as np
 import config
 
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 
 class Plotter(object):
     def __init__(self, *args, randomizePort=True, port=5555):
