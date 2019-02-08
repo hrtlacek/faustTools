@@ -5,7 +5,7 @@
 #description     : utilities for FAUST development
 #author          : Patrik Lechner <ptrk.lechner@gmail.com>
 #date            : Jan 2018
-#version         : 1.1
+#version         : 1.1.1
 #usage           :
 #notes           :
 #python_version  : 3.6.3
