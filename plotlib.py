@@ -1,3 +1,12 @@
+#!/usr/bin/env python
+
+#title           : plotlib.py
+#description     : plotting library for the faustwatch utility
+#author          : Patrik Lechner <ptrk.lechner@gmail.com>
+#date            : Jan 2018
+#python_version  : 3.6.3
+#=======================================================================
+
 import subprocess
 import shlex
 import sys
@@ -9,8 +18,6 @@ import time
 import pickle
 import numpy as np
 import config
-
-# logging.basicConfig(level=logging.DEBUG)
 
 class Plotter(object):
     def __init__(self, *args, randomizePort=True, port=5555):

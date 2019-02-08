@@ -3,11 +3,33 @@ At the moment there is one tool present, faustwatch.py
 
 ## Faustwatch
 
-Faustwatch is a tool that observes a .dsp file used by the dsp language [FAUST](https://faust.grame.fr/). If the file is changed (saved after editing), the blockdiagram can be automatically shown in the default browser, the impulse response can be plottet and more.
+Faustwatch is a tool that observes a .dsp file used by the dsp language [FAUST](https://faust.grame.fr/). If the file is changed (saved after editing): 
+- the blockdiagram can be automatically shown in the default browser
+- the impulse response can be plotted in the time domain
+- the impulse response can be plotted in the frequency domain.
+- the time and frequency domain plots of the last saved version are always visible so the current and last saved version can be compared.
+- the impulse response is played back via pyo and Jack Audio
+
+
 Basically it is supposed to make FAUST development faster.
 
 Here you can see it in action:
 ![](demo.gif)
+
+### Install
+This has only been tested under Linux and with python 3.6.3. It requires a number of standared libraries such as numpy,scipy: 
+- numpy 1.15.4
+- scipy 1.1.0
+
+and it requires some more uncommon libraries:
+- pyo 0.9.0
+- pyqtgraph 0.10.0
+- pyinotify 0.9.6
+- pyzmq 17.1.2
+
+
+
+This tool has not been tested with other versions of these libraries. Of course there is a good chance it will work just fine with newer versions of these.
 
 ### usage
 ``` bash

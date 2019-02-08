@@ -31,7 +31,6 @@ from pyo import Server, Sig, SndTable, Trig, Phasor, OscTrig, SfPlayer
 
 logging.captureWarnings(True)
 logging.basicConfig(level=logging.CRITICAL)
-# logging.Logger.disabled = True
 
 parser = argparse.ArgumentParser(description='Watch a dsp file for changes and take a specific action.')
 parser.add_argument('dspFile', metavar='N', type=str, 
@@ -55,12 +54,6 @@ parser.add_argument('--line', dest='line', action='store_const',
                     help='Get response to line from -1 to 1. So input-output amplitude relationship. Useful for plotting transfer functions of non-linearities')
 
 
-
-# parser.add_argument('--plot', dest='plot', action='store_const',
-#                     const=True, default=False,
-#                     help='Plot output of faust program.')
-
-
 args = parser.parse_args()
 dspFile = args.dspFile
 svg = args.svg
@@ -75,9 +68,6 @@ try:
 except:
     af = ''
 line = args.line
-
-
-
 
 class bcolors:
     HEADER = '\033[95m'
@@ -129,16 +119,7 @@ class DspFileHandler():
 
 
     def reloadAudioFile(self):
-        self.sfplayer = SfPlayer(self.outputPath, loop=False, mul=1).out()
-        # self.snd = SndTable(self.outputPath)
-        # mainPlayerAmp = Sig(1)
-        # self.trig = Trig()
-        # pp = Sig(0)
-        # phase = Phasor(freq=self.snd.getRate(), phase=pp)
-
-        # self.mainPlayer = OscTrig(self.snd, self.trig, freq=self.snd.getRate(),
-        #                       mul=mainPlayerAmp, interp=0).out()
-        
+        self.sfplayer = SfPlayer(self.outputPath, loop=False, mul=1).out()        
 
     def compute(self):
         if self.svg:
@@ -161,7 +142,6 @@ class DspFileHandler():
             if returnCode <2:
                 self.getIR()
                 self.plotSignalQt()
-                # self.play()
           
         if self.line:
             returnCode = self.compile()
@@ -209,7 +189,6 @@ class DspFileHandler():
         cmd = 'xdg-open '+svgPath
         cmd = shlex.split(cmd)
         proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        # resp = proc.communicate()
 
     def getIR(self):
         impOffsetSamps = int(round(self.lenSamps*0.25))
@@ -262,46 +241,13 @@ class DspFileHandler():
 
 
     def plotSignalQt(self):
-        sr, y = wavfile.read(self.outputPath)
+        _, y = wavfile.read(self.outputPath)
         currentAndLast = np.array([self.lastIR,y]).T
 
         self.plotter.plot(currentAndLast)
         self.lastIR = y
 
-        # f, Pxx_den = sig.welch(y, self.sr, nperseg=1024)
-
-        # Pxx, freqs, bins, im = plt.specgram(
-        #     y, NFFT=1024, Fs=self.sr, noverlap=100, cmap=plt.cm.gist_heat)
-
-
         return
-
-    # def plotSignal(self):
-    #     sr,y = wavfile.read(self.outputPath)
-    #     n = range(len(y))
-    #     x = self.inputSignal
-        
-    #     fig = plt.gcf()
-    #     plt.clf()
-        
-    #     plt.subplot(3,1,1)
-    #     plt.plot(n,x, color='black')
-    #     plt.plot(n,y, color='red', alpha=0.7)
-    #     plt.grid()
-    #     plt.legend(['input', 'output'])
-
-    #     plt.subplot(3,1,2)
-    #     Pxx, freqs, bins, im = plt.specgram(y, NFFT=1024, Fs=self.sr,noverlap=100, cmap=plt.cm.gist_heat)
-
-    #     plt.subplot(3,1,3)
-    #     f, Pxx_den = sig.welch(y, self.sr, nperseg=1024)
-    #     plt.semilogx(f,Pxx_den)
-
-
-
-    #     plt.show()
-    #     plt.pause(0.05)
-
 
     def getSpec(self):
         x = self.inputSignal
@@ -326,7 +272,6 @@ class EventHandler(pyinotify.ProcessEvent):
 
     def process_IN_CLOSE_WRITE(self,event):
         MyDspHandler.compute()
-
 
 # Instanciate a new WatchManager (will be used to store watches).
 wm = pyinotify.WatchManager()
