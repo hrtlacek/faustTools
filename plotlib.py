@@ -41,8 +41,8 @@ class Plotter(object):
         self.context = zmq.Context()
         return
 
-    def __createPlotProcess(self):
-        cmd = '/root/miniconda2/envs/findRefrain3/bin/python ' + \
+    def __createPlotProcess(self):        
+        cmd = config.pythonExec+' ' + \
             self.plotterFile+' '+str(self.port)
         logging.debug('starting subprocess via: '+ cmd)
         cmd = shlex.split(cmd)

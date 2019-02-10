@@ -17,6 +17,7 @@ Here you can see it in action:
 ![](demo.gif)
 
 ### Install
+#### Dependencies
 This has only been tested under Linux and with python 3.6.3. It requires a number of standared libraries such as numpy,scipy: 
 - numpy 1.15.4
 - scipy 1.1.0
@@ -27,9 +28,12 @@ and it requires some more uncommon libraries:
 - pyinotify 0.9.6
 - pyzmq 17.1.2
 
-
-
 This tool has not been tested with other versions of these libraries. Of course there is a good chance it will work just fine with newer versions of these.
+#### Configuration
+The file ```config.py``` has to be changed in order to make sure that:
+- the architecture file for offline processing can be found.
+- the right python executable is used to start the plotting process.
+
 
 ### usage
 ``` bash
