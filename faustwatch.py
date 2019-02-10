@@ -19,15 +19,13 @@ import os
 import numpy as np
 from scipy.io import wavfile
 import matplotlib
-import config
-import scipy.signal as sig
-
-import plotlib as pl
-import logging
-
 import argparse
 
-from pyo import Server, Sig, SndTable, Trig, Phasor, OscTrig, SfPlayer
+from pyo import Server,SfPlayer
+
+import config
+import plotlib as pl
+import logging
 
 logging.captureWarnings(True)
 logging.basicConfig(level=logging.CRITICAL)
@@ -114,8 +112,6 @@ class DspFileHandler():
 
         logging.info('watching file: '+os.path.abspath(dspFile))
 
-        # self.initializeAudio()
-
     def initializeAudio(self):
         self.audioServer = Server(audio='jack')
         self.audioServer.boot()
@@ -123,9 +119,26 @@ class DspFileHandler():
         self.reloadAudioFile()
         self.audioInitialized = True
 
-
+    def dummy(self):
+        return
+    
     def reloadAudioFile(self):
         self.sfplayer = SfPlayer(self.outputPath, loop=False, mul=1).out()        
+
+    def checkCompileResponseAndTakeAction(self,response,successAction):
+        resp = response.decode("utf-8")
+        if 'error' in resp.lower():
+            print(bcolors.FAIL+'>[ER]'+bcolors.ENDC+resp)
+            return 2
+        elif 'warning' in resp.lower():
+            print(bcolors.WARNING+'>[WA]'+bcolors.ENDC+resp)
+            successAction()
+            return 1
+        else:
+            print(resp)
+            print(bcolors.OKGREEN+'>[OK]'+bcolors.ENDC)
+            successAction()
+            return 0
 
     def compute(self):
         if not self.svg and not self.ir and not self.af and not self.line:
@@ -136,30 +149,15 @@ class DspFileHandler():
             proc = subprocess.Popen(
                 cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             resp = proc.communicate()[0]
-            resp = resp.decode("utf-8")
-            if 'ERROR' in resp:
-                print(bcolors.FAIL+'>[ER]'+bcolors.ENDC+resp)
-            elif 'WARNING' in resp:
-                print(bcolors.WARNING+'>[WA]'+bcolors.ENDC+resp)
-            else:
-                print(resp)
-                print(bcolors.OKGREEN+'>[OK]'+bcolors.ENDC)
+            self.checkCompileResponseAndTakeAction(resp,self.dummy)
 
         if self.svg:
             cmd = 'faust --svg '+self.dspFile
             cmd = shlex.split(cmd)
             proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             resp = proc.communicate()[0]
-            resp = resp.decode("utf-8")
-            if 'ERROR' in resp:
-                print (bcolors.FAIL+'>[ER]'+bcolors.ENDC+resp)
-            elif 'WARNING' in resp:
-                print (bcolors.WARNING+'>[WA]'+bcolors.ENDC+resp)
-                self.openSVG()
-            else:
-                print(resp)
-                print (bcolors.OKGREEN+'>[OK]'+bcolors.ENDC)
-                self.openSVG()
+            self.checkCompileResponseAndTakeAction(resp, self.openSVG)
+
         if self.ir:
             returnCode = self.compile()
             if returnCode <2:
@@ -194,17 +192,9 @@ class DspFileHandler():
         cmd = 'g++ -lsndfile '+outfileCpp+' -o '+self.binaryPath            
         cmd = shlex.split(cmd)
         proc = subprocess.Popen(cmd,stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        resp1 = proc.communicate()[0]
-        if 'ERROR' in resp:
-            print (bcolors.FAIL+'>[ER]'+bcolors.ENDC+resp)
-            return 2
-        elif 'WARNING' in resp:
-            print (bcolors.WARNING+'>[WA]'+bcolors.ENDC+resp)
-            return 1
-
-        else:
-            print (bcolors.OKGREEN+'>[OK]'+bcolors.ENDC)
-            return 0
+        resp = proc.communicate()[0]
+        returnCode = self.checkCompileResponseAndTakeAction(resp,self.dummy)
+        return returnCode
 
     def openSVG(self):
         
@@ -259,22 +249,14 @@ class DspFileHandler():
     def play(self):
         logging.debug('play function called')
         self.reloadAudioFile()
-        # self.trig.play()
         
-
-
     def plotSignalQt(self):
         _, y = wavfile.read(self.outputPath)
         currentAndLast = np.array([self.lastIR,y]).T
 
         self.plotter.plot(currentAndLast)
         self.lastIR = y
-
         return
-
-    def getSpec(self):
-        x = self.inputSignal
-        f, Pxx_den = sig.welch(x, self.sr, nperseg=1024)
 
 global MyDspHandler
 

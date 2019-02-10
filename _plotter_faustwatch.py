@@ -21,8 +21,6 @@ logging.debug('Logger process started.')
 global plots
 plots = []
 
-# print (sys.argv)
-
 try:
     port = sys.argv[1]
 except IndexError:
