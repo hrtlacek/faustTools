@@ -42,7 +42,7 @@ parser.add_argument('--ir', dest='ir', action='store_const',
                     help='Get impulse response and plot it.')
 
 # Hotfix: disableBroken: audio file input feature
-# parser.add_argument('--af', dest='af', type=str,nargs=1, default='', help='Send through audio file.')
+parser.add_argument('--af', dest='af', type=str,nargs=1, default='', help='Send through audio file.')
 
 parser.add_argument('--impLen', type=int, default = 1, help='Length of impulse in samples. Default is unit impulse, so 1.')
 
@@ -252,6 +252,14 @@ class DspFileHandler():
         
     def plotSignalQt(self):
         _, y = wavfile.read(self.outputPath)
+        if y.dtype != np.float64:
+            if y.dtype==np.int16:
+                y = y.astype(np.float64)/(2**15)
+            else:
+                y = y.astype(np.float64)
+        if not len(self.lastIR)==len(y):
+            self.lastIR = np.zeros_like(y)
+        
         currentAndLast = np.array([self.lastIR,y]).T
 
         self.plotter.plot(currentAndLast)
@@ -260,7 +268,7 @@ class DspFileHandler():
 
 global MyDspHandler
 
-if ir:
+if ir or len(af)>1:
     plotter = pl.Plotter()
     MyDspHandler = DspFileHandler(
         dspFile, svg=svg, ir=ir, af=af, line=line, impLen=impLen, plotter=plotter, lenSec=lenSec)
