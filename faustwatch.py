@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-#!/usr/bin/env python
 #title           : faustwatch.py
 #description     : utilities for FAUST development
 #author          : Patrik Lechner <ptrk.lechner@gmail.com>
@@ -41,7 +40,6 @@ parser.add_argument('--ir', dest='ir', action='store_const',
                     const=True, default=False,
                     help='Get impulse response and plot it.')
 
-# Hotfix: disableBroken: audio file input feature
 parser.add_argument('--af', dest='af', type=str,nargs=1, default='', help='Send through audio file.')
 
 parser.add_argument('--impLen', type=int, default = 1, help='Length of impulse in samples. Default is unit impulse, so 1.')

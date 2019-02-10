@@ -9,7 +9,7 @@ Faustwatch is a tool that observes a .dsp file used by the dsp language [FAUST](
 - the impulse response can be plotted in the frequency domain.
 - the time and frequency domain plots of the last saved version are always visible so the current and last saved version can be compared.
 - the impulse response is played back via pyo and Jack Audio
-
+- an audio file can be processed and the ouput can be plotted and played back
 
 Basically it is supposed to make FAUST development faster.
 

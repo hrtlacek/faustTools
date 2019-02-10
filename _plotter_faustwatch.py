@@ -12,7 +12,6 @@ import scipy.signal as sig
 
 import logging
 
-
 logging.captureWarnings(True)
 
 logging.basicConfig(level=logging.CRITICAL)
